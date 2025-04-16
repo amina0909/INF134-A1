@@ -15,6 +15,10 @@ class Button extends Widget{
     private defaultFontSize: number = 18;
     private defaultWidth: number = 80;
     private defaultHeight: number = 30;
+    private _onClickCallback?: () => void;
+    private _colors: string[] = ["#A7D2CB", "#056676", "#FFC93C", "#FF6F61"];
+    private _colorIndex: number = 0;
+
 
     constructor(parent:Window){
         super(parent);
@@ -38,6 +42,26 @@ class Button extends Widget{
         this.update();
     }
 
+    get label(): string {
+        return this._input;
+    }
+    
+    set label(value: string) {
+        this._input = value;
+        this.update();
+    }
+
+    get size(): { width: number; height: number } {
+        return { width: this.width, height: this.height };
+    }
+    
+    set size(dimensions: { width: number; height: number }) {
+        this.width = dimensions.width;
+        this.height = dimensions.height;
+        this._rect.size(this.width, this.height);
+        this.update();
+    }
+
     private positionText(){
         let box:Box = this._text.bbox();
         // in TS, the prepending with + performs a type conversion from string to number
@@ -47,11 +71,18 @@ class Button extends Widget{
             this._text.y(this._text_y);
         }
     }
+
+    private changeColor(): void {
+        this._colorIndex = (this._colorIndex + 1) % this._colors.length;
+        this._rect.fill(this._colors[this._colorIndex]);
+    }
     
     render(): void {
         this._group = (this.parent as Window).window.group();
         this._rect = this._group.rect(this.width, this.height);
-        this._rect.stroke("black");
+        this._rect.fill("#A7D2CB"); 
+        this._rect.stroke({ color: "#444", width: 2 })
+        this._rect.radius(6);
         this._text = this._group.text(this._input);
         // Set the outer svg element 
         this.outerSvg = this._group;
@@ -77,41 +108,54 @@ class Button extends Widget{
         super.update();
     }
     
-    pressReleaseState(): void{
-
-        if (this.previousState instanceof PressedWidgetState)
+    pressReleaseState(): void {
+        if (this.previousState instanceof PressedWidgetState) {
+            this.changeColor();
+            if (this._onClickCallback) {
+                this._onClickCallback();
+            }
             this.raise(new EventArgs(this));
+        }
     }
 
     //TODO: implement the onClick event using a callback passed as a parameter
-    onClick(/*TODO: add callback parameter*/):void{}
+    onClick(callback: () => void): void {
+        this._onClickCallback = callback;
+    }
 
     
     //TODO: give the states something to do! Use these methods to control the visual appearance of your
     //widget
     idleupState(): void {
-        throw new Error("Method not implemented.");
+        this._rect.fill("#A7D2CB");
     }
     idledownState(): void {
-        throw new Error("Method not implemented.");
+        this._rect.fill("#B5D3C9");
     }
     pressedState(): void {
-        throw new Error("Method not implemented.");
+        this._rect.fill("#056676");
+        this._group.scale(0.95);
     }
     hoverState(): void {
-        throw new Error("Method not implemented.");
+        this._rect.fill("#5EAAA8");
     }
     hoverPressedState(): void {
-        throw new Error("Method not implemented.");
+        this._rect.fill("#056676");
     }
     pressedoutState(): void {
-        throw new Error("Method not implemented.");
+        this._rect.fill("#E2E2E2");
+        this._group.scale(1);
     }
     moveState(): void {
-        throw new Error("Method not implemented.");
+        this._group.scale(1.02);
     }
     keyupState(keyEvent?: KeyboardEvent): void {
-        throw new Error("Method not implemented.");
+        if (keyEvent && (keyEvent.key === "Enter" || keyEvent.key === " ")) {
+            this._rect.fill("#FFD56F");
+        if (this._onClickCallback) {
+            this._onClickCallback();
+        }
+    }
     }
 }
 
